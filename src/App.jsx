@@ -1,112 +1,154 @@
-import { useState, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { hand } from '../texas-holdem.js'
-import './index.css'
-
-// Placeholder for components I'm about to build
-import CardSelector from './components/CardSelector'
-import HandDisplay from './components/HandDisplay'
-import ResultDisplay from './components/ResultDisplay'
+import React, { useState, useMemo } from 'react';
+import Card from './components/Card';
+import CardPicker from './components/CardPicker';
+import ResultPanel from './components/ResultPanel';
+import { evaluateHand } from './pokerLogic';
 
 function App() {
-  const [holeCards, setHoleCards] = useState([])
-  const [communityCards, setCommunityCards] = useState([])
+  // Hole cards (2 player cards)
+  const [holeCards, setHoleCards] = useState([null, null]);
 
-  // Logic Integration
-  const result = useMemo(() => {
-    if (holeCards.length === 2 && communityCards.length === 5) {
-      // Logic requires strings e.g., 'K♠'
-      // My card objects will likely be { rank: 'K', suit: '♠' }
-      // So I map them to strings
-      const holeStrings = holeCards.map(c => `${c.rank}${c.suit}`)
-      const commStrings = communityCards.map(c => `${c.rank}${c.suit}`)
-      return hand(holeStrings, commStrings)
+  // Community cards (3-5 cards on the table)
+  const [communityCards, setCommunityCards] = useState([null, null, null, null, null]);
+
+  // Card picker state
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerTarget, setPickerTarget] = useState(null); // { type: 'hole'|'community', index: number }
+
+  // Get all used cards
+  const usedCards = useMemo(() => {
+    return [...holeCards, ...communityCards].filter(Boolean);
+  }, [holeCards, communityCards]);
+
+  // Evaluate current hand
+  const handResult = useMemo(() => {
+    const validHole = holeCards.filter(Boolean);
+    const validCommunity = communityCards.filter(Boolean);
+
+    if (validHole.length === 2 && validCommunity.length >= 3) {
+      return evaluateHand(holeCards, communityCards);
     }
-    return null
-  }, [holeCards, communityCards])
+    return null;
+  }, [holeCards, communityCards]);
 
+  // Open card picker
+  const openPicker = (type, index) => {
+    setPickerTarget({ type, index });
+    setPickerOpen(true);
+  };
+
+  // Handle card selection from picker
   const handleCardSelect = (card) => {
-    // Check if card is already selected
-    const isHole = holeCards.some(c => c.rank === card.rank && c.suit === card.suit)
-    const isComm = communityCards.some(c => c.rank === card.rank && c.suit === card.suit)
+    if (!pickerTarget) return;
 
-    if (isHole) {
-      setHoleCards(holeCards.filter(c => c.rank !== card.rank || c.suit !== card.suit))
-      return
-    }
-    if (isComm) {
-      setCommunityCards(communityCards.filter(c => c.rank !== card.rank || c.suit !== card.suit))
-      return
-    }
-
-    // Add logic
-    if (holeCards.length < 2) {
-      setHoleCards([...holeCards, card])
-    } else if (communityCards.length < 5) {
-      setCommunityCards([...communityCards, card])
+    if (pickerTarget.type === 'hole') {
+      const newHole = [...holeCards];
+      newHole[pickerTarget.index] = card;
+      setHoleCards(newHole);
     } else {
-      // Full, shake animation trigger?
+      const newCommunity = [...communityCards];
+      newCommunity[pickerTarget.index] = card;
+      setCommunityCards(newCommunity);
     }
-  }
 
-  const reset = () => {
-    setHoleCards([])
-    setCommunityCards([])
-  }
+    setPickerOpen(false);
+    setPickerTarget(null);
+  };
+
+  // Clear a card
+  const clearCard = (type, index) => {
+    if (type === 'hole') {
+      const newHole = [...holeCards];
+      newHole[index] = null;
+      setHoleCards(newHole);
+    } else {
+      const newCommunity = [...communityCards];
+      newCommunity[index] = null;
+      setCommunityCards(newCommunity);
+    }
+  };
+
+  // Reset all cards
+  const resetAll = () => {
+    setHoleCards([null, null]);
+    setCommunityCards([null, null, null, null, null]);
+  };
+
+  // Get number of community cards shown (at least 3, up to 5)
+  const visibleCommunitySlots = Math.max(
+    3,
+    communityCards.filter(Boolean).length + 1,
+    5
+  );
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-4xl glass-panel p-8"
-      >
-        <header className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold tracking-tighter">
-            Poker<span className="text-gradient">Analyzer</span>
-          </h1>
-          <button onClick={reset} className="text-sm bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20">
-            Reset Table
-          </button>
-        </header>
+    <div className="app">
+      <header className="app-header">
+        <h1 className="app-title">Poker Hand Evaluator</h1>
+        <p className="app-subtitle">Select your cards to see your best hand</p>
+      </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <section>
-              <h2 className="text-xl font-semibold mb-3 text-secondary">Your Hand <span className="text-sm opacity-50">({holeCards.length}/2)</span></h2>
-              <HandDisplay cards={holeCards} max={2} />
-            </section>
-            <section>
-              <h2 className="text-xl font-semibold mb-3 text-secondary">Community Cards <span className="text-sm opacity-50">({communityCards.length}/5)</span></h2>
-              <HandDisplay cards={communityCards} max={5} />
-            </section>
-
-            <AnimatePresence>
-              {result && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                >
-                  <ResultDisplay result={result} />
-                </motion.div>
-              )}
-            </AnimatePresence>
+      <main className="poker-table">
+        {/* Your Hand (Hole Cards) */}
+        <section className="hand-section">
+          <div className="section-label">Your Hand</div>
+          <div className="cards-row">
+            {holeCards.map((card, index) => (
+              <Card
+                key={`hole-${index}`}
+                card={card}
+                onClick={() => card ? clearCard('hole', index) : openPicker('hole', index)}
+                className={card ? 'card-flip' : ''}
+              />
+            ))}
           </div>
+        </section>
 
-          <div className="glass-panel p-6 bg-black/20">
-            <h2 className="text-xl font-semibold mb-4 text-center">Select Cards</h2>
-            <CardSelector
-              selectedHole={holeCards}
-              selectedCommunity={communityCards}
-              onSelect={handleCardSelect}
-            />
+        {/* Community Cards */}
+        <section className="hand-section">
+          <div className="section-label">Community Cards</div>
+          <div className="cards-row">
+            {communityCards.slice(0, 5).map((card, index) => (
+              <Card
+                key={`community-${index}`}
+                card={card}
+                onClick={() => card ? clearCard('community', index) : openPicker('community', index)}
+                className={card ? 'card-flip' : ''}
+              />
+            ))}
           </div>
-        </div>
+        </section>
 
-      </motion.div>
+        {/* Result */}
+        <ResultPanel
+          result={handResult}
+          holeCards={holeCards}
+          communityCards={communityCards}
+        />
+
+        {/* Clear Button */}
+        {usedCards.length > 0 && (
+          <div style={{ textAlign: 'center' }}>
+            <button className="clear-btn" onClick={resetAll}>
+              Clear All Cards
+            </button>
+          </div>
+        )}
+      </main>
+
+      {/* Card Picker Modal */}
+      {pickerOpen && (
+        <CardPicker
+          onSelect={handleCardSelect}
+          onClose={() => {
+            setPickerOpen(false);
+            setPickerTarget(null);
+          }}
+          usedCards={usedCards}
+        />
+      )}
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
