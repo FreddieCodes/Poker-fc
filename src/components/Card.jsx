@@ -1,32 +1,42 @@
-import { motion } from 'framer-motion'
-import clsx from 'clsx'
+import React from 'react';
 
-const SUIT_COLORS = {
-  '♦': 'text-red-500',
-  '♥': 'text-red-500',
-  '♣': 'text-slate-200',
-  '♠': 'text-slate-200'
-}
+// Utility to determine if a suit is red
+const isRedSuit = (suit) => suit === '♥' || suit === '♦';
 
-export default function Card({ rank, suit, selected, disabled, onClick, className }) {
-  return (
-    <motion.div
+// Parse a card string like "K♠" into { rank, suit }
+export const parseCard = (cardStr) => {
+  if (!cardStr) return null;
+  const suit = cardStr.slice(-1);
+  const rank = cardStr.slice(0, -1);
+  return { rank, suit };
+};
 
-      onClick={!disabled ? onClick : undefined}
-      className={clsx(
-        "relative rounded-lg w-14 h-20 sm:w-16 sm:h-24 flex items-center justify-center border-2 cursor-pointer select-none transition-colors",
-        "bg-white dark:bg-[#1e293b]", // Card background
-        selected
-          ? "border-primary ring-2 ring-primary ring-offset-2 ring-offset-bg-dark shadow-[0_0_15px_rgba(59,130,246,0.5)]"
-          : "border-slate-700 hover:border-slate-500",
-        disabled && "opacity-20 cursor-not-allowed grayscale",
-        className
-      )}
-    >
-      <div className={clsx("flex flex-col items-center leading-none", SUIT_COLORS[suit])}>
-        <span className="text-xl sm:text-2xl font-bold">{rank}</span>
-        <span className="text-2xl sm:text-3xl">{suit}</span>
+// Format a card object back to string
+export const formatCard = (rank, suit) => `${rank}${suit}`;
+
+const Card = ({ card, onClick, selected = false, className = '' }) => {
+  const parsed = typeof card === 'string' ? parseCard(card) : card;
+
+  if (!parsed) {
+    return (
+      <div className={`card-slot ${className}`} onClick={onClick}>
+        <span className="card-slot-icon">+</span>
       </div>
-    </motion.div>
-  )
-}
+    );
+  }
+
+  const { rank, suit } = parsed;
+  const colorClass = isRedSuit(suit) ? 'red' : 'black';
+
+  return (
+    <div
+      className={`card ${colorClass} ${selected ? 'selected' : ''} ${className}`}
+      onClick={onClick}
+    >
+      <span className="card-rank">{rank}</span>
+      <span className="card-suit">{suit}</span>
+    </div>
+  );
+};
+
+export default Card;

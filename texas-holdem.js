@@ -294,7 +294,7 @@ function isPair(allCards) {
   return tupleFinder(2, allCards);
 }
 
-export {
+module.exports = {
   hand,
   isStraight
 };

@@ -1,4 +1,4 @@
-import { hand, isStraight } from '../texas-holdem.js';
+const { hand, isStraight} = require('../texas-holdem');
 
 describe("hand", () => {
   // Test cases for the hand function
