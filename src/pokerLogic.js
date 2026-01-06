@@ -73,7 +73,7 @@ function tupleFinder(tupleType, allCards) {
   const numberOfKickers = 5 - tupleType;
 
   for (const rank in countObj) {
-    if (countObj[rank] === tupleType) {
+    if (countObj[rank] >= tupleType) {
       const tupleCards = allCards.filter(c => c.rank === rank);
       const kicker = allCards.filter(c => c.rank !== rank).sort(byDescRank);
       const ranks = kicker.slice(0, numberOfKickers).map(card => card.rank);

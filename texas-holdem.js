@@ -202,7 +202,7 @@ function tupleFinder(tupleType, allCards) {
   const numberOfKickers = 5 - tupleType;
 
   for (const rank in countObj) {
-    if (countObj[rank] === tupleType) {
+    if (countObj[rank] >= tupleType) {
       const tupleCards = allCards.filter(c => c.rank === rank);
        // get kicker by getting other cards and sorting by card rank
       const kicker = allCards.filter(c => c.rank !== rank).sort(byDescRank);
@@ -294,7 +294,7 @@ function isPair(allCards) {
   return tupleFinder(2, allCards);
 }
 
-module.exports = {
+export {
   hand,
   isStraight
 };

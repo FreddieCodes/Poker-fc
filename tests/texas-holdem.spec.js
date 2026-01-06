@@ -1,4 +1,4 @@
-const { hand, isStraight} = require('../texas-holdem');
+import { hand, isStraight } from '../texas-holdem.js';
 
 describe("hand", () => {
   // Test cases for the hand function
@@ -40,8 +40,8 @@ describe("hand", () => {
 
   // it should return correctly if the type is full house
   it("should return correctly if the type is full house", () => {
-    let expResult = { type: "full house", ranks: ["K", "A"] };
-    expect(hand(["K♠", "A♠"], ["K♣", "K♥", "A♥", "Q♥", "3♦"])).toEqual(
+    let expResult = { type: "full house", ranks: ["A", "K"] };
+    expect(hand(["A♠", "A♦"], ["A♣", "K♦", "5♦", "K♥", "K♠"])).toEqual(
       expResult
     );
   });
